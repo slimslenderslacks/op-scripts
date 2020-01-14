@@ -1,0 +1,22 @@
+{
+  "name": "cljs-scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:watch": "shadow-cljs watch script",
+    "build": "shadow-cljs release release"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "shadow-cljs": "^2.8.69",
+    "source-map-support": "0.5.9"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.4.19"
+  },
+  "bin": {
+    "export_secrets": "./index.js"
+  }
+}
