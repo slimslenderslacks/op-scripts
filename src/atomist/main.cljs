@@ -11,7 +11,9 @@
 
 (def export-1password {"Clojars" {"CLOJARS_USERNAME" "username"
                                   "CLOJARS_PASSWORD" "password"}
-                       "ApiKeySlimslenderslacksProd" {"API_KEY_SLIMSLENDERSLACKS_PROD" "password"}})
+                       "ApiKeySlimslenderslacksProd" {"API_KEY_SLIMSLENDERSLACKS_PROD" "password"}
+                       "ApiKeySlimslenderslacksStaging" {"API_KEY_SLIMSLENDERSLACKS_STAGING" "password"}
+                       "GitHubTokenSlimSlenderSlacks" {"GITHUB_TOKEN" "password"}})
 
 (defn ^:export handler []
   (try
