@@ -16,14 +16,14 @@
 (defn- document-handler [mapping out err]
   (let [item (js->clj (.parse js/JSON out) :keywordize-keys true)]
     (doseq [[env-name path] (seq mapping)]
-      (println (gstring/format "export %s=%s" env-name (get-in item path))))))
+      (println (gstring/format "export %s=\"%s\"" env-name (get-in item path))))))
 
 (defn- item-handler [mapping out err]
   (let [item (js->clj (.parse js/JSON out) :keywordize-keys true)]
     (doseq [[env-name designation] (seq mapping)]
       (println (gstring/format "export %s=%s" env-name (or
-                                                        (->> item :details :fields (filter #(= designation (:designation %))) first :value)
-                                                        (if (= "password" designation) (->> item :details :password))))))))
+                                                            (->> item :details :fields (filter #(= designation (:designation %))) first :value)
+                                                            (if (= "password" designation) (->> item :details :password))))))))
 
 (defn- op-handler [out err callback]
   (cond
