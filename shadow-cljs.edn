@@ -1,7 +1,7 @@
 {:deps {:aliases [:dev :test]}
- :builds {:script {:target    :node-script
-                   :main     atomist.main/handler
-                   :output-to "index.js"}
+ :builds {:dev {:target    :node-library
+                :exports {:handler atomist.main/handler}
+                :output-to "index.js"}
           :release {:target :node-script
                     :output-to "index.js"
                     :main atomist.main/handler

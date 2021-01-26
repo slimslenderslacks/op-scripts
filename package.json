@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build:watch": "shadow-cljs watch script",
+    "build:watch": "shadow-cljs watch dev",
     "build": "shadow-cljs release release"
   },
   "author": "",
@@ -17,6 +17,6 @@
     "iconv-lite": "^0.4.19"
   },
   "bin": {
-    "export_secrets": "./index.js"
+    "export_secrets": "index.js"
   }
 }
