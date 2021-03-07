@@ -6,15 +6,20 @@
    [cljs.nodejs.shell :as sh]
    [goog.string :as gstring]
    [goog.string.format]
+   [com.rpl.specter :as specter]
    [cljs.reader]
    [cljs.pprint :refer [pprint]]))
 
 (enable-console-print!)
 
+(defn note-path [path]
+  (let [[section title] (s/split path "/")]
+    [:details :sections specter/ALL (fn [x] (= (:title x) section)) :fields specter/ALL (fn [x] (= (:t x) title)) :v]))
+
 (def cache-file (io/file (gstring/format "%s/.1password-delete-cache-never-save" (.. js/process -env -HOME))))
 
 (defn- op-mappings []
-  (cljs.reader/read-string (slurp (gstring/format "%s/.export-1password" (.. js/process -env -HOME)))))
+  (cljs.reader/read-string (slurp (gstring/format "%s/.export-1password.edn" (.. js/process -env -HOME)))))
 
 (defn- document-handler [mapping cache-out out err]
   (let [item (js->clj (.parse js/JSON out) :keywordize-keys true)]
@@ -34,6 +39,15 @@
       (.write cache-out (str export "\n"))
       (println export))))
 
+(defn- specter-item-handler [mapping cache-out out err]
+  (let [item (js->clj (.parse js/JSON out) :keywordize-keys true)]
+    (doseq [[env-name path] (seq mapping) ]
+      (let [path (note-path path)
+            value (first (specter/select path item))
+            export (gstring/format "export %s=%s" env-name value)]
+        (.write cache-out (str export "\n"))
+        (println export)))))
+
 (defn- op-handler [out err callback]
   (cond
     (s/includes? err "401: Authentication required.")
@@ -47,7 +61,29 @@
     :else
     (callback out err)))
 
-(defn extract []
+(defn extract-one-item [k v cache-file-stream]
+  (cond
+    (s/starts-with? k "document")
+    (let [{:keys [out err]} (sh/sh "op" "get" "document" (s/replace k #"document/" ""))]
+      (op-handler out err (partial document-handler v cache-file-stream)))
+
+    (s/starts-with? k "note")
+    (let [{:keys [out err]} (sh/sh "op" "get" "item" (s/replace k #"note/" ""))]
+      (op-handler out err (partial specter-item-handler v cache-file-stream)))
+
+    :else
+    (let [{:keys [out err]} (sh/sh "op" "get" "item" k)]
+      (op-handler out err (partial item-handler v cache-file-stream)))))
+
+(comment
+  (extract-one-item
+   "note/gcr-test AWS Account Creds"
+   {"ECR_ACCESS_KEY_ID" "Creds/accessKeyId"
+    "ECR_SECRET_ACCESS_KEY" "Creds/secretAccessKey"}
+   (io/output-stream (io/file "tmp.txt"))
+   ))
+
+(defn extract-all []
   (go
     (try
       (let [export-1password (op-mappings)]
@@ -56,15 +92,7 @@
                 done-ch (cljs.core.async/chan)]
             (.on cache-file-stream "finish" (fn [& _] (go (>! done-ch :finished))))
             (doseq [[k v] (seq export-1password)]
-              (cond
-
-                (s/starts-with? k "document")
-                (let [{:keys [out err]} (sh/sh "op" "get" "document" (s/replace k #"document/" ""))]
-                  (op-handler out err (partial document-handler (get export-1password k) cache-file-stream)))
-
-                :else
-                (let [{:keys [out err]} (sh/sh "op" "get" "item" k)]
-                  (op-handler out err (partial item-handler (get export-1password k) cache-file-stream)))))
+              (extract-one-item k v cache-file-stream))
             (.end cache-file-stream)
             (<! done-ch))
           (println (slurp cache-file))))
@@ -76,7 +104,7 @@
 (defn ^:export handler []
   (let [args (drop 2 (. js/process -argv))]
     (go
-      (<! (extract))
+      (<! (extract-all))
       (.exit js/process 0))))
 
-(comment (extract))
+(comment (extract-all))
