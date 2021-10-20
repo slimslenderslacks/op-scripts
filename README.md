@@ -33,26 +33,8 @@ You can map data from 1password into the `export` statements using an `.edn` fil
 
 ```
 {"Clojars" {"CLOJARS_USERNAME" "username"
-            "CLOJARS_PASSWORD" "password"}
- "document/githuboauthredirect.json" {"GITHUBOAUTHREDIRECT_PASSPHRASE" [:data :passphrase]
-                                      "GITHUBOAUTHREDIRECT_PEM" [:data :pem]}}
+            "CLOJARS_PASSWORD" "password"}}
 ```
 
 The keys are named items in the 1password atomist "Team" vault.  The values are maps that setup the `export` statements 
 (keys are the name of the environment variables, and the values are fields in the 1password secrets).
-
-### jwt-creator
-
-The jwt-creator can be started with a ~/.export-1password of
-
-```
-{"document/githuboauthredirect.json" {"GITHUBOAUTHREDIRECT_PASSPHRASE" [:data :passphrase]
-                                      "GITHUBOAUTHREDIRECT_PEM" [:data :pem]}}
-```
-
-and then
-
-```
-eval $(op signin atomist)
-eval $(export_secrets)
-```
