@@ -29,19 +29,17 @@
       (.write cache-out (str export "\n"))
       (println export))))
 
-(defn- item-handler [mapping cache-out out err]
+(defn- item-handler [mapping cache-out out _]
   (let [item (js->clj (.parse js/JSON out) :keywordize-keys true)]
     (doseq [[env-name designation] (seq mapping)
-            :let [value (or
-                         (->> item :details :fields (filter #(= designation (:designation %))) first :value)
-                         (if (= "password" designation) (->> item :details :password)))
+            :let [value (->> item :fields (filter #(= designation (:label %))) first :value)
                   export (gstring/format "export %s=%s" env-name value)]]
       (.write cache-out (str export "\n"))
       (println export))))
 
-(defn- specter-item-handler [mapping cache-out out err]
+(defn- specter-item-handler [mapping cache-out out _]
   (let [item (js->clj (.parse js/JSON out) :keywordize-keys true)]
-    (doseq [[env-name path] (seq mapping) ]
+    (doseq [[env-name path] (seq mapping)]
       (let [path (note-path path)
             value (first (specter/select path item))
             export (gstring/format "export %s=%s" env-name value)]
@@ -62,17 +60,18 @@
     (callback out err)))
 
 (defn extract-one-item [k v cache-file-stream]
+  (println "extract " k v)
   (cond
     (s/starts-with? k "document")
     (let [{:keys [out err]} (sh/sh "op" "get" "document" (s/replace k #"document/" ""))]
       (op-handler out err (partial document-handler v cache-file-stream)))
 
     (s/starts-with? k "note")
-    (let [{:keys [out err]} (sh/sh "op" "get" "item" (s/replace k #"note/" ""))]
-      (op-handler out err (partial specter-item-handler v cache-file-stream)))
+    (let [{:keys [out err]} (sh/sh "op" "item" "get" "--format" "json" (s/replace k #"note/" ""))]
+      (op-handler out err (partial item-handler v cache-file-stream)))
 
     :else
-    (let [{:keys [out err]} (sh/sh "op" "get" "item" k)]
+    (let [{:keys [out err]} (sh/sh "op" "item" "get" "--format" "json" k)]
       (op-handler out err (partial item-handler v cache-file-stream)))))
 
 (comment
